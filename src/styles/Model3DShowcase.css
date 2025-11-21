@@ -1,0 +1,221 @@
+/* 3D Model Showcase Styles */
+
+.model-showcase-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.model-showcase-container .display-4 {
+  color: #2c3e50;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.model-tabs {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.model-tabs .btn-group {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.model-tabs .btn {
+  font-weight: 600;
+  padding: 15px 30px;
+  transition: all 0.3s ease;
+}
+
+.model-tabs .btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Color Presets */
+.color-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-preset-btn {
+  width: 40px;
+  height: 40px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.color-preset-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-preset-btn.active {
+  border-color: #0d6efd;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5);
+}
+
+/* Card Styles */
+.model-showcase-container .card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.model-showcase-container .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.model-showcase-container .card-header {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  padding: 1rem 1.5rem;
+}
+
+.model-showcase-container .card-body {
+  padding: 1.5rem;
+}
+
+/* Form Controls */
+.model-showcase-container .form-select,
+.model-showcase-container .form-control {
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.model-showcase-container .form-select:focus,
+.model-showcase-container .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.model-showcase-container .form-label {
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* Buttons */
+.model-showcase-container .btn {
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.model-showcase-container .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Features Cards */
+.model-showcase-container .features-section .card {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.model-showcase-container .features-section .card:hover {
+  border-color: #0d6efd;
+}
+
+.model-showcase-container .features-section i {
+  transition: all 0.3s ease;
+}
+
+.model-showcase-container .features-section .card:hover i {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Info Lists */
+.model-showcase-container .list-unstyled li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.model-showcase-container .list-unstyled li:last-child {
+  border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .model-showcase-container .display-4 {
+    font-size: 2.5rem;
+  }
+
+  .model-tabs .btn {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+  }
+
+  .color-preset-btn {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+@media (max-width: 768px) {
+  .model-showcase-container .display-4 {
+    font-size: 2rem;
+  }
+
+  .model-showcase-container .lead {
+    font-size: 1rem;
+  }
+
+  .model-tabs .btn {
+    font-size: 0.85rem;
+    padding: 10px 15px;
+  }
+
+  .color-preset-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .model-showcase-container .card-body {
+    padding: 1rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.model-showcase-container .card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading State */
+.model-showcase-container .loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.model-showcase-container .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
