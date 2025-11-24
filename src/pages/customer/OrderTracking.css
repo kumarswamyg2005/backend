@@ -1,0 +1,437 @@
+/**
+ * Order Tracking Page Styles
+ * Flipkart-like real-world tracking experience
+ */
+
+.order-tracking-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Header */
+.tracking-header {
+  border-left: 4px solid #28a745;
+}
+
+.tracking-header .badge {
+  padding: 8px 16px;
+}
+
+/* Tabs */
+.nav-tabs .nav-link {
+  color: #666;
+  border: none;
+  padding: 12px 20px;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+  color: #28a745;
+  border-bottom: 3px solid #28a745;
+  background: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #28a745;
+}
+
+/* Delivery Partner Info */
+.delivery-partner-info {
+  border-left: 4px solid #17a2b8;
+}
+
+/* Estimated Delivery */
+.estimated-delivery {
+  border-left: 4px solid #28a745;
+}
+
+/* OTP Display */
+.otp-display {
+  border: 2px dashed #ffc107;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+  }
+}
+
+/* Live Tracking */
+.live-indicator {
+  width: 12px;
+  height: 12px;
+  background: #28a745;
+  border-radius: 50%;
+  display: inline-block;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.map-placeholder {
+  border: 2px dashed #dee2e6;
+}
+
+/* Delivery Timeline */
+.delivery-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 25px;
+  padding-left: 25px;
+  border-left: 2px solid #dee2e6;
+}
+
+.timeline-item:last-child {
+  border-left: 2px solid transparent;
+  padding-bottom: 0;
+}
+
+.timeline-item.completed {
+  border-left-color: #28a745;
+}
+
+.timeline-item.completed .timeline-icon {
+  background: #28a745;
+  color: white;
+}
+
+.timeline-item.current .timeline-icon {
+  background: #007bff;
+  color: white;
+  animation: pulseIcon 1.5s infinite;
+}
+
+@keyframes pulseIcon {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 123, 255, 0);
+  }
+}
+
+.timeline-icon {
+  position: absolute;
+  left: -15px;
+  width: 30px;
+  height: 30px;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.timeline-content h6 {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.timeline-content small {
+  font-size: 12px;
+}
+
+/* Production Milestones */
+.production-milestones {
+  position: relative;
+}
+
+.milestone-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #dee2e6;
+  transition: all 0.3s ease;
+}
+
+.milestone-item.completed {
+  border-left-color: #28a745;
+  background: rgba(40, 167, 69, 0.05);
+}
+
+.milestone-item.in-progress {
+  border-left-color: #007bff;
+  background: rgba(0, 123, 255, 0.05);
+  animation: highlightMilestone 2s infinite;
+}
+
+@keyframes highlightMilestone {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.2);
+  }
+}
+
+.milestone-icon {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2px solid #dee2e6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.milestone-item.completed .milestone-icon {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+.milestone-item.in-progress .milestone-icon {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.milestone-content {
+  flex: 1;
+}
+
+.milestone-content h6 {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+/* Chat Container */
+.chat-container {
+  padding: 0;
+}
+
+.chat-messages {
+  padding: 15px;
+  background: #f8f9fa;
+}
+
+.message {
+  max-width: 75%;
+  margin-bottom: 15px;
+}
+
+.message.sent {
+  margin-left: auto;
+}
+
+.message.received {
+  margin-right: auto;
+}
+
+.message-content {
+  padding: 10px 15px;
+  border-radius: 15px;
+  background: #007bff;
+  color: white;
+}
+
+.message.received .message-content {
+  background: white;
+  color: #333;
+  border: 1px solid #dee2e6;
+}
+
+.message.sent .message-content {
+  border-radius: 15px 15px 0 15px;
+}
+
+.message.received .message-content {
+  border-radius: 15px 15px 15px 0;
+}
+
+/* Order Items */
+.order-item {
+  transition: all 0.2s ease;
+}
+
+.order-item:hover {
+  background: #f8f9fa;
+}
+
+.item-image {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* Proof of Delivery */
+.proof-of-delivery {
+  border-left: 4px solid #28a745;
+}
+
+/* Designer Info */
+.designer-info {
+  border-left: 4px solid #6f42c1;
+}
+
+.designer-avatar {
+  width: 50px;
+  height: 50px;
+  background: rgba(111, 66, 193, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Delivery Person */
+.delivery-avatar {
+  width: 50px;
+  height: 50px;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #28a745;
+}
+
+/* Custom Colors */
+.bg-purple {
+  background-color: #6f42c1 !important;
+}
+
+.bg-teal {
+  background-color: #20c997 !important;
+}
+
+.text-purple {
+  color: #6f42c1 !important;
+}
+
+/* Progress Bar */
+.production-progress .progress {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.production-progress .progress-bar {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Quick Actions */
+.card .d-grid.gap-2 .btn {
+  text-align: left;
+  padding: 12px 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tracking-header .d-flex {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-tabs .nav-link {
+    white-space: nowrap;
+    padding: 10px 15px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .timeline-item {
+    padding-left: 20px;
+  }
+
+  .timeline-icon {
+    width: 25px;
+    height: 25px;
+    left: -12px;
+    font-size: 12px;
+  }
+
+  .milestone-item {
+    padding: 10px;
+  }
+
+  .milestone-icon {
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+  }
+}
+
+/* Animation for new messages */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message {
+  animation: slideIn 0.3s ease;
+}
+
+/* Status colors */
+.status-pending {
+  color: #ffc107;
+}
+.status-confirmed {
+  color: #17a2b8;
+}
+.status-processing {
+  color: #007bff;
+}
+.status-shipped {
+  color: #6f42c1;
+}
+.status-delivered {
+  color: #28a745;
+}
+.status-cancelled {
+  color: #dc3545;
+}
+
+/* Card hover effect */
+.card.shadow-sm {
+  transition: box-shadow 0.3s ease;
+}
+
+.card.shadow-sm:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
