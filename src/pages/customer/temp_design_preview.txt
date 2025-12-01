@@ -1,0 +1,9 @@
+              {/* 3D Model Viewer */}
+              <ModelViewer 
+                category={formData.category}
+                gender={formData.gender}
+                color={formData.color}
+              />
+              
+              <div className="mt-3">
+                <h5>Design Summary</h5>

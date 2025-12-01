@@ -1,0 +1,323 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { customerAPI } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useFlash } from "../../context/FlashContext";
+import ModelViewer from "../../components/ModelViewer";
+
+const DesignStudio = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { showFlash } = useFlash();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    category: "T-Shirt",
+    gender: "Men",
+    fabric: "Cotton",
+    color: "#ffffff",
+    pattern: "Solid",
+    size: "M",
+    customText: "",
+    customImage: "",
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      showFlash("Please login to access Design Studio", "error");
+      navigate("/login");
+    }
+  }, [user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e, action) => {
+    e.preventDefault();
+
+    if (!formData.name) {
+      showFlash("Please enter a design name", "error");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      if (action === "save") {
+        await customerAPI.saveDesign(formData);
+        showFlash("Design saved successfully!", "success");
+        navigate("/customer/dashboard");
+      } else if (action === "cart") {
+        await customerAPI.addToCart(formData);
+        showFlash("Design added to cart!", "success");
+        navigate("/customer/cart");
+      }
+    } catch (error) {
+      showFlash(
+        error.response?.data?.message || "Failed to save design",
+        "error"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="container my-4">
+      <div className="row mb-4">
+        <div className="col-md-12">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h2 className="card-title">Design Studio</h2>
+              <p className="card-text">
+                Create your custom clothing design by selecting fabric, colors,
+                and patterns.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-md-8">
+          <div className="card shadow-sm">
+            <div className="card-header">
+              <h3>Design Your Clothing</h3>
+            </div>
+            <div className="card-body">
+              <form onSubmit={(e) => handleSubmit(e, "save")}>
+                <div className="mb-3">
+                  <label htmlFor="name" className="form-label">
+                    Design Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label htmlFor="category" className="form-label">
+                      Category
+                    </label>
+                    <select
+                      className="form-select"
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="T-Shirt">T-Shirt</option>
+                      <option value="Shirt">Shirt</option>
+                      <option value="Hoodie">Hoodie</option>
+                      <option value="Kurthi">Kurthi</option>
+                      <option value="Dress">Dress</option>
+                      <option value="Jeans">Jeans</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="gender" className="form-label">
+                      Gender
+                    </label>
+                    <select
+                      className="form-select"
+                      id="gender"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="Men">Men</option>
+                      <option value="Women">Women</option>
+                      <option value="Unisex">Unisex</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label htmlFor="fabric" className="form-label">
+                      Fabric
+                    </label>
+                    <select
+                      className="form-select"
+                      id="fabric"
+                      name="fabric"
+                      value={formData.fabric}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="Cotton">Cotton</option>
+                      <option value="Linen">Linen</option>
+                      <option value="Silk">Silk</option>
+                      <option value="Polyester">Polyester</option>
+                      <option value="Wool">Wool</option>
+                      <option value="Denim">Denim</option>
+                      <option value="Fleece">Fleece</option>
+                      <option value="Jersey">Jersey</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="size" className="form-label">
+                      Size
+                    </label>
+                    <select
+                      className="form-select"
+                      id="size"
+                      name="size"
+                      value={formData.size}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="XS">XS</option>
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="XXL">XXL</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label htmlFor="color" className="form-label">
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      className="form-control form-control-color"
+                      id="color"
+                      name="color"
+                      value={formData.color}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="pattern" className="form-label">
+                      Pattern
+                    </label>
+                    <select
+                      className="form-select"
+                      id="pattern"
+                      name="pattern"
+                      value={formData.pattern}
+                      onChange={handleChange}
+                    >
+                      <option value="Solid">Solid</option>
+                      <option value="Striped">Striped</option>
+                      <option value="Checkered">Checkered</option>
+                      <option value="Floral">Floral</option>
+                      <option value="Abstract">Abstract</option>
+                      <option value="Polka Dot">Polka Dot</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="customText" className="form-label">
+                    Custom Text (Optional)
+                  </label>
+                  <textarea
+                    className="form-control"
+                    id="customText"
+                    name="customText"
+                    value={formData.customText}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder="Add custom text to your design..."
+                  />
+                </div>
+
+                <div className="d-flex gap-2">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Saving..." : "Save Design"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={(e) => handleSubmit(e, "cart")}
+                    disabled={submitting}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-header">
+              <h3>Preview</h3>
+            </div>
+            <div className="card-body">
+              <div
+                className="design-preview p-4 text-center rounded"
+                style={{
+                  backgroundColor: formData.color,
+                  minHeight: "300px",
+                  border: "2px solid #dee2e6",
+                }}
+              >
+                <div className="mt-5">
+                  <h5>{formData.category}</h5>
+                  <p className="text-muted">
+                    {formData.fabric} - {formData.pattern}
+                  </p>
+                  <p className="text-muted">Size: {formData.size}</p>
+                  {formData.customText && (
+                    <p className="mt-3 fw-bold">{formData.customText}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <h5>Design Summary</h5>
+                <ul className="list-unstyled">
+                  <li>
+                    <strong>Name:</strong> {formData.name || "Not set"}
+                  </li>
+                  <li>
+                    <strong>Category:</strong> {formData.category}
+                  </li>
+                  <li>
+                    <strong>Gender:</strong> {formData.gender}
+                  </li>
+                  <li>
+                    <strong>Fabric:</strong> {formData.fabric}
+                  </li>
+                  <li>
+                    <strong>Pattern:</strong> {formData.pattern}
+                  </li>
+                  <li>
+                    <strong>Size:</strong> {formData.size}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DesignStudio;

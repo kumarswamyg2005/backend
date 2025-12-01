@@ -1,0 +1,153 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { managerAPI } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useFlash } from "../../context/FlashContext";
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const { showFlash } = useFlash();
+  const [stats, setStats] = useState({});
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [dashboardResponse, ordersResponse] = await Promise.all([
+        managerAPI.getDashboard(),
+        managerAPI.getOrders(),
+      ]);
+      setStats(dashboardResponse.data.stats || {});
+      setOrders(ordersResponse.data.orders || []);
+    } catch (error) {
+      showFlash("Failed to load dashboard", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container my-4">
+        <div className="text-center py-5">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container my-4">
+      <div className="row mb-4">
+        <div className="col-md-12">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h2 className="card-title">Manager Dashboard</h2>
+              <p className="card-text">
+                Welcome, {user?.username}! Manage production and orders.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row mb-4">
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body text-center">
+              <h5 className="card-title">Pending Orders</h5>
+              <h2 className="text-warning">{stats.pendingOrders || 0}</h2>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body text-center">
+              <h5 className="card-title">In Production</h5>
+              <h2 className="text-primary">{stats.inProductionOrders || 0}</h2>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body text-center">
+              <h5 className="card-title">Completed</h5>
+              <h2 className="text-success">{stats.completedOrders || 0}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-md-12">
+          <div className="card shadow-sm">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h3>Recent Orders</h3>
+              <Link to="/manager/pending" className="btn btn-primary btn-sm">
+                View Pending
+              </Link>
+            </div>
+            <div className="card-body">
+              {orders.length === 0 ? (
+                <div className="alert alert-info">No orders found.</div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => (
+                        <tr key={order._id}>
+                          <td>
+                            <code>{order._id.substring(0, 8)}...</code>
+                          </td>
+                          <td>
+                            {order.userId?.username ||
+                              order.userId?.email ||
+                              "N/A"}
+                          </td>
+                          <td>
+                            <span className="badge bg-info">
+                              {order.status.replace("-", " ").toUpperCase()}
+                            </span>
+                          </td>
+                          <td>
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <Link
+                              to={`/manager/order/${order._id}`}
+                              className="btn btn-sm btn-outline-primary"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
