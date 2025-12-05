@@ -85,6 +85,9 @@
 }
 
 .status-ready_for_delivery,
+.status-ready_for_pickup,
+.status-picked_up,
+.status-in_transit,
 .status-out_for_delivery {
   background: #cff4fc;
   color: #055160;

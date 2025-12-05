@@ -238,7 +238,7 @@ const ProductReviews = ({ productId }) => {
             <form onSubmit={handleSubmitReview}>
               <div className="mb-3">
                 <label className="form-label">Rating</label>
-                <div className="d-flex gap-2">
+                <div className="d-flex align-items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
@@ -246,6 +246,16 @@ const ProductReviews = ({ productId }) => {
                       className="btn btn-link p-0"
                       onClick={() =>
                         setReviewForm({ ...reviewForm, rating: star })
+                      }
+                      style={{
+                        cursor: "pointer",
+                        transition: "transform 0.2s",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.target.style.transform = "scale(1.2)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.target.style.transform = "scale(1)")
                       }
                     >
                       <i
@@ -255,16 +265,17 @@ const ProductReviews = ({ productId }) => {
                         style={{
                           color:
                             star <= reviewForm.rating ? "#ffc107" : "#dee2e6",
-                          fontSize: "24px",
+                          fontSize: "28px",
                         }}
                       ></i>
                     </button>
                   ))}
-                  <span className="ms-2 align-self-center">
-                    {reviewForm.rating}{" "}
-                    {reviewForm.rating === 1 ? "star" : "stars"}
+                  <span className="ms-3 align-self-center text-muted">
+                    ({reviewForm.rating}{" "}
+                    {reviewForm.rating === 1 ? "star" : "stars"})
                   </span>
                 </div>
+                <small className="text-muted">Click on stars to rate</small>
               </div>
 
               <div className="mb-3">

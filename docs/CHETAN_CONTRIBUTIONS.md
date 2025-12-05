@@ -2,173 +2,36 @@
 
 **Email:** chetankrishna.g23@iiits.in  
 **Role:** Backend & Frontend Integration Specialist  
-**Total Commits:** 14
+**Total Commits:** 13
 
 ---
 
-## What I Built
+## Commits Summary
 
-### 1. React Application Entry
-
-**Commit:** Add React entry point and App component  
-**Explanation:** I created the main App.jsx file which is the root of our React application. It includes:
-
-- All route definitions (which URL shows which page)
-- Context providers wrapping the app
-- The main application structure
-
----
-
-### 2. API Service Configuration
-
-**Commit:** Setup Axios API service configuration  
-**Explanation:** I configured Axios (HTTP client) for making API calls to our backend. This includes:
-
-- Base URL configuration
-- Request/response interceptors
-- Cookie handling for sessions
-- Error handling for network issues
+| #   | Commit                                  | What We Used                                  | Logic Behind It                                                                 |
+| --- | --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1   | Add React entry point and App component | React Router, Context Providers               | App.jsx is root → Define all routes → Wrap with AuthContext, CartContext        |
+| 2   | Setup Axios API service                 | Axios, Interceptors, Cookies                  | Configure base URL → Add auth headers → Handle errors globally                  |
+| 3   | Setup Express backend with MongoDB      | Express.js, Mongoose, bcrypt, express-session | Create server → Connect MongoDB → Define schemas → API endpoints → Session auth |
+| 4   | Add Header component with navigation    | React Router Link, useAuth                    | Show logo → Role-based nav links → Cart count badge → Login/Logout              |
+| 5   | Add ProductDetails page with reviews    | useParams, useEffect, useState                | Get productId → Fetch product → Display images/details → Show reviews           |
+| 6   | Add Customer OrderDetails with OTP      | useParams, Conditional render                 | Fetch order → Show timeline → If status='out_for_delivery' show OTP             |
+| 7   | Add Manager Dashboard with statistics   | useEffect, Array.reduce()                     | Fetch all orders → Calculate stats (pending, delivered) → Display cards         |
+| 8   | Add Designer OrderDetails               | useParams, Status update                      | Show custom order details → Designer can update production status               |
+| 9   | Add Admin Products inventory            | useEffect, CRUD operations                    | List all products → Edit stock → Update prices → Toggle in-stock                |
+| 10  | Add FlashMessages component             | useFlash hook, CSS transitions                | Subscribe to flash context → Render toast stack → Animate in/out                |
+| 11  | Add DataTable and SearchBar             | Props, Array.filter()                         | Reusable table → Accept data as prop → Sort/filter/paginate                     |
+| 12  | Add 3D showcase styling                 | CSS Grid, Custom properties                   | Style the 3D model display page with proper layout                              |
+| 13  | Add currency formatting utilities       | Intl.NumberFormat                             | Format numbers as ₹1,999.00 with Indian locale                                  |
 
 ---
 
-### 3. Backend Server
+## Key Technologies
 
-**Commit:** Setup Express backend with MongoDB  
-**Explanation:** I built the complete backend server with:
-
-- Express.js server setup
-- MongoDB database connection
-- User authentication (login/signup/logout)
-- All API endpoints for products, orders, cart, etc.
-- Session management for keeping users logged in
-- Role-based access control
-
----
-
-### 4. Navigation Header
-
-**Commit:** Add Header component with navigation  
-**Explanation:** I developed the top navigation bar that shows:
-
-- Logo and brand name
-- Navigation links based on user role (Customer, Designer, Manager, Admin, Delivery)
-- Cart icon with item count
-- Login/Logout buttons
-- Theme toggle switch
-
----
-
-### 5. Product Details Page
-
-**Commit:** Add ProductDetails page with reviews  
-**Explanation:** I created the page showing complete product information:
-
-- Product images
-- Name, price, description
-- Size selection
-- Add to cart button
-- Customer reviews and ratings
-- Stock availability
-
----
-
-### 6. Customer Order Details
-
-**Commit:** Add Customer OrderDetails with OTP display  
-**Explanation:** I built the page where customers can see their order details including:
-
-- Order items and prices
-- Delivery address
-- Order status timeline
-- OTP display for delivery verification (shown when order is out for delivery)
-
----
-
-### 7. Manager Dashboard
-
-**Commit:** Add Manager Dashboard with statistics  
-**Explanation:** I developed the manager's main page showing:
-
-- Order statistics (pending, processing, delivered)
-- Recent orders list
-- Quick actions for order management
-- Team assignment options
-
----
-
-### 8. Designer Order Details
-
-**Commit:** Add Designer OrderDetails with tracking  
-**Explanation:** I created the designer's order view where they can:
-
-- See custom design specifications
-- View customer requirements
-- Update production progress
-- Mark production as complete
-
----
-
-### 9. Admin Inventory Page
-
-**Commit:** Add Admin Products inventory page  
-**Explanation:** I built the admin product management page for:
-
-- Viewing all products
-- Updating stock quantities
-- Editing product details
-- Marking items as in/out of stock
-
----
-
-### 10. Notification System
-
-**Commit:** Add FlashMessages notification component  
-**Explanation:** I implemented the toast notification component that shows:
-
-- Success messages (green)
-- Error messages (red)
-- Warning messages (yellow)
-- Auto-dismiss after few seconds
-
----
-
-### 11. Reusable Components
-
-**Commit:** Add DataTable and SearchBar components  
-**Explanation:** I created reusable components:
-
-- **DataTable:** Displays data in table format with sorting and pagination
-- **SearchBar:** Input field for searching/filtering data
-
----
-
-### 12. 3D Showcase Styling
-
-**Commit:** Add 3D showcase styling  
-**Explanation:** I designed the CSS styles for the 3D model showcase page, making the 3D viewer look professional with proper spacing and controls.
-
----
-
-### 13. Currency Formatting
-
-**Commit:** Add currency formatting utilities  
-**Explanation:** I created utility functions to format prices in Indian Rupees (₹) with proper comma separations (e.g., ₹1,999.00).
-
----
-
-### 14. Code Cleanup
-
-**Commit:** Remove extra documentation files  
-**Explanation:** I cleaned up unnecessary files to keep the project organized and reduce clutter.
-
----
-
-## Summary
-
-As the Backend & Integration Specialist, I focused on:
-
-- **Building the complete backend API**
-- **Connecting frontend with backend**
-- **Product and order management features**
-- **Reusable UI components**
-- **Data formatting utilities**
+| Technology       | Purpose                      |
+| ---------------- | ---------------------------- |
+| Express.js       | Backend server framework     |
+| MongoDB/Mongoose | Database and ODM             |
+| bcrypt           | Password hashing             |
+| express-session  | Session-based authentication |
+| Axios            | HTTP client for API calls    |

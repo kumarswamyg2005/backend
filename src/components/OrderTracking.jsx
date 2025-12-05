@@ -40,10 +40,11 @@ const OrderTracking = ({ orderId }) => {
   const isCustomOrder = trackingData.orderType === "Custom Design";
 
   // Define workflow steps based on order type
+  // These must match the actual statuses used in the database
   const shopWorkflow = [
     { status: "pending", label: "Order Placed", icon: "🛒" },
     { status: "assigned_to_manager", label: "Received by Manager", icon: "👔" },
-    { status: "ready_for_delivery", label: "Ready for Delivery", icon: "📦" },
+    { status: "ready_for_pickup", label: "Ready for Delivery", icon: "📦" },
     { status: "out_for_delivery", label: "Out for Delivery", icon: "🚚" },
     { status: "delivered", label: "Delivered", icon: "✅" },
   ];
@@ -63,21 +64,48 @@ const OrderTracking = ({ orderId }) => {
       label: "Production Complete",
       icon: "✨",
     },
-    { status: "ready_for_delivery", label: "Ready for Delivery", icon: "📦" },
+    { status: "ready_for_pickup", label: "Ready for Delivery", icon: "📦" },
     { status: "out_for_delivery", label: "Out for Delivery", icon: "🚚" },
     { status: "delivered", label: "Delivered", icon: "✅" },
   ];
 
   const workflow = isCustomOrder ? customWorkflow : shopWorkflow;
 
+  // Map status to workflow index - handles statuses that aren't directly in workflow
+  const getStatusIndex = (status) => {
+    // Direct match
+    const directIndex = workflow.findIndex((step) => step.status === status);
+    if (directIndex !== -1) return directIndex;
+
+    // Map intermediate statuses to their logical position
+    const statusMapping = {
+      // These statuses come after ready_for_pickup but before out_for_delivery
+      picked_up: workflow.findIndex((s) => s.status === "out_for_delivery"),
+      in_transit: workflow.findIndex((s) => s.status === "out_for_delivery"),
+      // Legacy status mappings
+      assigned: workflow.findIndex((s) => s.status === "assigned_to_manager"),
+      shipped: workflow.findIndex((s) => s.status === "out_for_delivery"),
+      completed: workflow.findIndex((s) => s.status === "delivered"),
+    };
+
+    return statusMapping[status] ?? -1;
+  };
+
   // Get current status index
-  const currentStatusIndex = workflow.findIndex(
-    (step) => step.status === trackingData.currentStatus
-  );
+  const currentStatusIndex = getStatusIndex(trackingData.currentStatus);
+
+  // Debug logging
+  console.log("OrderTracking Debug:", {
+    currentStatus: trackingData.currentStatus,
+    currentStatusIndex,
+    isCustomOrder,
+    workflowLength: workflow.length,
+  });
 
   // Check if status is completed
   const isStatusCompleted = (index) => {
     if (trackingData.currentStatus === "cancelled") return false;
+    if (currentStatusIndex === -1) return false;
     return index <= currentStatusIndex;
   };
 
@@ -129,9 +157,12 @@ const OrderTracking = ({ orderId }) => {
 
       {/* OTP Display - Show when delivery is active */}
       {trackingData.otp &&
-        ["picked_up", "in_transit", "out_for_delivery"].includes(
-          trackingData.currentStatus
-        ) && (
+        [
+          "ready_for_pickup",
+          "picked_up",
+          "in_transit",
+          "out_for_delivery",
+        ].includes(trackingData.currentStatus) && (
           <div className="otp-display-section">
             <div
               className="alert alert-warning border-warning"
@@ -203,10 +234,37 @@ const OrderTracking = ({ orderId }) => {
               className={`timeline-step ${isCompleted ? "completed" : ""} ${
                 isCurrent ? "current" : ""
               }`}
+              style={{
+                opacity: isCompleted || isCurrent ? 1 : 0.5,
+              }}
             >
-              <div className="timeline-icon">{step.icon}</div>
+              <div
+                className="timeline-icon"
+                style={{
+                  background: isCompleted
+                    ? "#d1e7dd"
+                    : isCurrent
+                    ? "#cfe2ff"
+                    : "#e9ecef",
+                  borderColor: isCompleted
+                    ? "#2ecc71"
+                    : isCurrent
+                    ? "#3498db"
+                    : "#dee2e6",
+                  borderWidth: "3px",
+                  borderStyle: "solid",
+                }}
+              >
+                {step.icon}
+              </div>
               <div className="timeline-content">
-                <h4>{step.label}</h4>
+                <h4
+                  style={{
+                    color: isCompleted || isCurrent ? "#2c3e50" : "#6c757d",
+                  }}
+                >
+                  {step.label}
+                </h4>
                 {isCompleted && (
                   <p className="timeline-time">
                     {formatDate(
@@ -220,45 +278,15 @@ const OrderTracking = ({ orderId }) => {
                   className={`timeline-connector ${
                     isCompleted ? "completed" : ""
                   }`}
+                  style={{
+                    background: isCompleted ? "#2ecc71" : "#dee2e6",
+                  }}
                 ></div>
               )}
             </div>
           );
         })}
       </div>
-
-      {/* Assigned Personnel */}
-      {trackingData.assignedPersonnel && (
-        <div className="assigned-personnel">
-          <h4>Assigned Team</h4>
-          <div className="personnel-list">
-            {trackingData.assignedPersonnel.manager && (
-              <div className="personnel-item">
-                <span className="personnel-role">Manager:</span>
-                <span className="personnel-name">
-                  {trackingData.assignedPersonnel.manager.name}
-                </span>
-              </div>
-            )}
-            {isCustomOrder && trackingData.assignedPersonnel.designer && (
-              <div className="personnel-item">
-                <span className="personnel-role">Designer:</span>
-                <span className="personnel-name">
-                  {trackingData.assignedPersonnel.designer.name}
-                </span>
-              </div>
-            )}
-            {trackingData.assignedPersonnel.delivery && (
-              <div className="personnel-item">
-                <span className="personnel-role">Delivery:</span>
-                <span className="personnel-name">
-                  {trackingData.assignedPersonnel.delivery.name}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Detailed Timeline History */}
       {trackingData.timeline && trackingData.timeline.length > 0 && (
@@ -308,24 +336,28 @@ const getTimestampForStatus = (status, trackingData) => {
   // Check timestamps object first
   switch (status) {
     case "pending":
-      return timestamps.orderPlaced;
+      return timestamps?.orderPlaced;
     case "assigned_to_manager":
-      return timestamps.managerAssigned;
+      return timestamps?.managerAssigned;
     case "assigned_to_designer":
-      return timestamps.designerAssigned;
+      return timestamps?.designerAssigned;
     case "designer_accepted":
-      return timestamps.designerAccepted;
+      return timestamps?.designerAccepted;
     case "production_completed":
-      return timestamps.productionCompleted;
+      return timestamps?.productionCompleted;
+    case "ready_for_pickup":
     case "ready_for_delivery":
-      return timestamps.deliveryAssigned;
+      return timestamps?.deliveryAssigned;
     default:
       break;
   }
 
   // Fall back to timeline
-  const timelineEvent = timeline.find((event) => event.status === status);
-  return timelineEvent?.at;
+  if (timeline) {
+    const timelineEvent = timeline.find((event) => event.status === status);
+    return timelineEvent?.at;
+  }
+  return null;
 };
 
 export default OrderTracking;

@@ -534,22 +534,31 @@ const OrderDetails = () => {
                 <strong>
                   <span
                     className={`badge ${
-                      order.paymentStatus === "paid"
+                      order.paymentStatus === "paid" ||
+                      order.paymentStatus === "completed"
                         ? "bg-success"
                         : "bg-warning text-dark"
                     }`}
                   >
-                    {order.paymentStatus?.toUpperCase() || "PENDING"}
+                    {order.paymentStatus === "completed"
+                      ? "PAID"
+                      : order.paymentStatus?.toUpperCase() || "PENDING"}
                   </span>
                 </strong>
               </div>
               <div className="mt-3">
                 <span
                   className={`badge ${
-                    order.paymentStatus === "paid" ? "bg-success" : "bg-warning"
+                    order.paymentStatus === "paid" ||
+                    order.paymentStatus === "completed"
+                      ? "bg-success"
+                      : "bg-warning"
                   }`}
                 >
-                  Payment: {order.paymentStatus || "unpaid"}
+                  Payment:{" "}
+                  {order.paymentStatus === "completed"
+                    ? "Paid"
+                    : order.paymentStatus || "unpaid"}
                 </span>
               </div>
             </div>

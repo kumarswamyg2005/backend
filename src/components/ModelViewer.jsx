@@ -186,11 +186,6 @@ const ModelViewer = ({
           women: "/models/tshirt_women.glb",
           unisex: "/models/tshirt_men.glb",
         },
-        shirt: {
-          men: "/models/tshirt_men.glb",
-          women: "/models/dress_women.glb",
-          unisex: "/models/tshirt_men.glb",
-        },
         hoodie: {
           men: "/models/hoodie_men.glb",
           women: "/models/hoodie_women.glb",
@@ -225,7 +220,7 @@ const ModelViewer = ({
     const loader = new GLTFLoader();
 
     loader.load(
-      `http://localhost:3000${modelFilePath}`,
+      modelFilePath,
       (gltf) => {
         if (!isMounted) return;
         console.log("3D model loaded successfully");
@@ -321,7 +316,7 @@ const ModelViewer = ({
       if (graphic && graphic !== "None") {
         const textureLoader = new THREE.TextureLoader();
         const graphicTexture = textureLoader.load(
-          `http://localhost:3000/images/graphics/${graphic}`,
+          `/images/graphics/${graphic}`,
           () => {
             console.log("Graphic texture loaded:", graphic);
           },
@@ -349,7 +344,7 @@ const ModelViewer = ({
           if (graphic && graphic !== "None") {
             const textureLoader = new THREE.TextureLoader();
             const graphicTexture = textureLoader.load(
-              `http://localhost:3000/images/graphics/${graphic}`,
+              `/images/graphics/${graphic}`,
               () => {
                 console.log("Graphic texture loaded:", graphic);
               },

@@ -628,11 +628,6 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="d-flex gap-2 align-items-center">
-                        <span
-                          className={`badge bg-${getPriorityBadge(priority)}`}
-                        >
-                          {priority.toUpperCase()}
-                        </span>
                         {orderType ? (
                           <span className="badge bg-purple">
                             <i className="fas fa-palette me-1"></i>Custom

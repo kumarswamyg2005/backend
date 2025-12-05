@@ -324,7 +324,6 @@ const DesignStudio = () => {
                       required
                     >
                       <option value="T-Shirt">T-Shirt</option>
-                      <option value="Shirt">Shirt</option>
                       <option value="Hoodie">Hoodie</option>
                       <option value="Kurthi">Kurthi</option>
                       <option value="Dress">Dress</option>
@@ -350,29 +349,66 @@ const DesignStudio = () => {
                   </div>
                 </div>
 
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label htmlFor="fabric" className="form-label">
-                      Fabric
-                    </label>
-                    <select
-                      className="form-select"
-                      id="fabric"
-                      name="fabric"
-                      value={formData.fabric}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="Cotton">Cotton</option>
-                      <option value="Linen">Linen</option>
-                      <option value="Silk">Silk</option>
-                      <option value="Polyester">Polyester</option>
-                      <option value="Wool">Wool</option>
-                      <option value="Denim">Denim</option>
-                      <option value="Fleece">Fleece</option>
-                      <option value="Jersey">Jersey</option>
-                    </select>
+                {formData.graphic === "None" && (
+                  <div className="row mb-3">
+                    <div className="col-md-4">
+                      <label htmlFor="fabric" className="form-label">
+                        Fabric
+                      </label>
+                      <select
+                        className="form-select"
+                        id="fabric"
+                        name="fabric"
+                        value={formData.fabric}
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="Cotton">Cotton</option>
+                        <option value="Linen">Linen</option>
+                        <option value="Silk">Silk</option>
+                        <option value="Polyester">Polyester</option>
+                        <option value="Wool">Wool</option>
+                        <option value="Denim">Denim</option>
+                        <option value="Fleece">Fleece</option>
+                        <option value="Jersey">Jersey</option>
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label htmlFor="color" className="form-label">
+                        Color
+                      </label>
+                      <input
+                        type="color"
+                        className="form-control form-control-color"
+                        id="color"
+                        name="color"
+                        value={formData.color}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label htmlFor="pattern" className="form-label">
+                        Pattern
+                      </label>
+                      <select
+                        className="form-select"
+                        id="pattern"
+                        name="pattern"
+                        value={formData.pattern}
+                        onChange={handleChange}
+                      >
+                        <option value="Solid">Solid</option>
+                        <option value="Striped">Striped</option>
+                        <option value="Checkered">Checkered</option>
+                        <option value="Floral">Floral</option>
+                        <option value="Abstract">Abstract</option>
+                        <option value="Polka Dot">Polka Dot</option>
+                      </select>
+                    </div>
                   </div>
+                )}
+
+                <div className="row mb-3">
                   <div className="col-md-6">
                     <label htmlFor="size" className="form-label">
                       Size
@@ -391,41 +427,6 @@ const DesignStudio = () => {
                       <option value="L">L</option>
                       <option value="XL">XL</option>
                       <option value="XXL">XXL</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <label htmlFor="color" className="form-label">
-                      Color
-                    </label>
-                    <input
-                      type="color"
-                      className="form-control form-control-color"
-                      id="color"
-                      name="color"
-                      value={formData.color}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pattern" className="form-label">
-                      Pattern
-                    </label>
-                    <select
-                      className="form-select"
-                      id="pattern"
-                      name="pattern"
-                      value={formData.pattern}
-                      onChange={handleChange}
-                    >
-                      <option value="Solid">Solid</option>
-                      <option value="Striped">Striped</option>
-                      <option value="Checkered">Checkered</option>
-                      <option value="Floral">Floral</option>
-                      <option value="Abstract">Abstract</option>
-                      <option value="Polka Dot">Polka Dot</option>
                     </select>
                   </div>
                 </div>

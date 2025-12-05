@@ -162,12 +162,15 @@ const TrackOrder = () => {
                 <span>Payment Status:</span>
                 <span
                   className={`badge ${
-                    order.paymentStatus === "completed"
+                    order.paymentStatus === "completed" ||
+                    order.paymentStatus === "paid"
                       ? "bg-success"
                       : "bg-warning text-dark"
                   }`}
                 >
-                  {order.paymentStatus?.toUpperCase() || "PENDING"}
+                  {order.paymentStatus === "completed"
+                    ? "PAID"
+                    : order.paymentStatus?.toUpperCase() || "PENDING"}
                 </span>
               </div>
               <hr />

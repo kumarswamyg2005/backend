@@ -101,13 +101,6 @@ function ProductDetails() {
         animateToCart(productImageRef.current);
       }
 
-      // Update local product stock immediately (optimistic update)
-      setProduct((prev) => ({
-        ...prev,
-        stockQuantity: prev.stockQuantity - quantity,
-        inStock: prev.stockQuantity - quantity > 0,
-      }));
-
       setJustAdded(true);
       showFlash("Product added to cart!", "success");
 
@@ -385,26 +378,6 @@ function ProductDetails() {
                       Please <Link to="/login">login</Link> as a customer to
                       purchase products.
                     </>
-                  )}
-                </div>
-              )}
-
-              {/* Stock Info */}
-              {product.inStock !== undefined && (
-                <div className="mt-3">
-                  {product.inStock ? (
-                    <span className="text-success">
-                      <i className="bi bi-check-circle me-1"></i>
-                      In Stock{" "}
-                      {product.stockQuantity > 0
-                        ? `(${product.stockQuantity} available)`
-                        : ""}
-                    </span>
-                  ) : (
-                    <span className="text-danger">
-                      <i className="bi bi-x-circle me-1"></i>
-                      Out of Stock
-                    </span>
                   )}
                 </div>
               )}

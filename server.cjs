@@ -613,11 +613,14 @@ app.post("/api/auth/signup", async (req, res) => {
       });
     }
 
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = new User({
       username,
       name: name || username, // Use username as fallback if name not provided
       email,
-      password,
+      password: hashedPassword,
       contactNumber,
       role: role || "customer",
       approved: true,
@@ -689,8 +692,14 @@ app.get("/api/shop/products", async (req, res) => {
 
     let query = {};
 
-    if (category) query.category = category;
-    if (gender) query.gender = gender;
+    // Case-insensitive category filter
+    if (category) {
+      query.category = { $regex: new RegExp(`^${category}$`, "i") };
+    }
+    // Case-insensitive gender filter
+    if (gender) {
+      query.gender = { $regex: new RegExp(`^${gender}$`, "i") };
+    }
     if (size) query.sizes = { $in: [size] };
     if (minPrice || maxPrice) {
       query.price = {};
@@ -2956,16 +2965,8 @@ app.post("/api/customer/cart", async (req, res) => {
       cart.items.push({ productId, designId, quantity, size, color });
     }
 
-    // Reduce stock quantity only for products (not custom designs)
-    if (productId) {
-      const product = await Product.findById(productId);
-      product.stockQuantity -= addedQuantity;
-      if (product.stockQuantity <= 0) {
-        product.inStock = false;
-        product.stockQuantity = 0;
-      }
-      await product.save();
-    }
+    // NOTE: Stock is NOT reduced when adding to cart
+    // Stock will be reduced only when order is placed (in checkout/place-order)
 
     cart.updatedAt = new Date();
     await cart.save();
@@ -3006,32 +3007,9 @@ app.put("/api/customer/cart/:itemId", async (req, res) => {
         .json({ success: false, message: "Item not found in cart" });
     }
 
-    const product = await Product.findById(item.productId);
-    if (!product) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found" });
-    }
+    // NOTE: Stock is NOT modified when updating cart
+    // Stock will only be reduced when order is placed
 
-    // Calculate stock change
-    const quantityDifference = quantity - item.quantity;
-
-    if (quantityDifference > 0) {
-      // Increasing quantity - check stock availability
-      if (product.stockQuantity < quantityDifference) {
-        return res.status(400).json({
-          success: false,
-          message: "Insufficient stock available",
-        });
-      }
-      product.stockQuantity -= quantityDifference;
-    } else if (quantityDifference < 0) {
-      // Decreasing quantity - return stock
-      product.stockQuantity += Math.abs(quantityDifference);
-      product.inStock = true;
-    }
-
-    await product.save();
     item.quantity = quantity;
     cart.updatedAt = new Date();
     await cart.save();
@@ -3066,13 +3044,8 @@ app.delete("/api/customer/cart/:itemId", async (req, res) => {
         .json({ success: false, message: "Item not found in cart" });
     }
 
-    // Return stock to product
-    const product = await Product.findById(item.productId);
-    if (product) {
-      product.stockQuantity += item.quantity;
-      product.inStock = true;
-      await product.save();
-    }
+    // NOTE: Stock is NOT returned when removing from cart
+    // Stock was never reduced when adding to cart
 
     item.deleteOne();
     cart.updatedAt = new Date();
@@ -4697,6 +4670,18 @@ app.post("/delivery/api/order/:id/out-for-delivery", async (req, res) => {
     }
 
     order.status = "out_for_delivery";
+
+    // Generate OTP for delivery verification
+    if (!order.deliveryOTP?.code) {
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+      order.deliveryOTP = {
+        code: otp,
+        generatedAt: new Date(),
+        verified: false,
+      };
+      console.log("Generated OTP for order:", order._id, "OTP:", otp);
+    }
+
     order.timeline.push({
       status: "out_for_delivery",
       note: "Package is out for delivery",
@@ -4712,12 +4697,13 @@ app.post("/delivery/api/order/:id/out-for-delivery", async (req, res) => {
     await Notification.create({
       userId: order.userId._id,
       orderId: order._id,
-      message: `Your order is out for delivery! Keep your OTP ready: ${order.deliveryOTP?.code}`,
+      message: `Your order is out for delivery! Your delivery OTP is: ${order.deliveryOTP.code}. Share this with the delivery person to confirm delivery.`,
       type: "info",
     });
 
     res.json({ success: true, message: "Order is out for delivery", order });
   } catch (error) {
+    console.error("Error marking out for delivery:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -4738,11 +4724,37 @@ app.post("/delivery/api/order/:id/deliver", async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    // Verify OTP
-    if (order.deliveryOTP?.code && otp !== order.deliveryOTP.code) {
+    // Verify OTP - REQUIRED for delivery
+    if (!order.deliveryOTP?.code) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP. Please enter correct OTP.",
+        message:
+          "OTP not generated. Please mark order as 'Out for Delivery' first.",
+      });
+    }
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is required for delivery confirmation.",
+      });
+    }
+
+    // Compare OTP (trim and convert to string for safety)
+    const enteredOTP = String(otp).trim();
+    const actualOTP = String(order.deliveryOTP.code).trim();
+
+    console.log(
+      "OTP Verification - Entered:",
+      enteredOTP,
+      "Actual:",
+      actualOTP
+    );
+
+    if (enteredOTP !== actualOTP) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please ask customer for correct OTP.",
       });
     }
 
@@ -4750,6 +4762,7 @@ app.post("/delivery/api/order/:id/deliver", async (req, res) => {
     order.status = "delivered";
     order.deliveredAt = new Date();
     order.actualDelivery = new Date();
+    order.paymentStatus = "completed"; // Mark payment as completed on delivery
 
     order.deliveryOTP.verified = true;
     order.deliveryOTP.verifiedAt = new Date();
@@ -5220,7 +5233,12 @@ app.get("/api/order/:orderId/track", async (req, res) => {
       // OTP for delivery verification (CUSTOMER SEES THIS!)
       otp:
         order.deliveryOTP?.code &&
-        ["out_for_delivery", "picked_up", "in_transit"].includes(order.status)
+        [
+          "ready_for_pickup",
+          "out_for_delivery",
+          "picked_up",
+          "in_transit",
+        ].includes(order.status)
           ? order.deliveryOTP.code
           : null,
 

@@ -39,10 +39,8 @@ api.interceptors.response.use(
       );
     }
 
-    if (error.response?.status === 401) {
-      // Redirect to login on unauthorized
-      window.location.href = "/login";
-    }
+    // Don't auto-redirect on 401 - let the ProtectedRoute handle it
+    // This prevents back button from going to login
     return Promise.reject(error);
   }
 );

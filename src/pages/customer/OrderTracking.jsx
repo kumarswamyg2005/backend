@@ -262,12 +262,16 @@ const OrderTracking = () => {
                   </span>
                   <span
                     className={`badge ${
-                      order.paymentStatus === "completed"
+                      order.paymentStatus === "completed" ||
+                      order.paymentStatus === "paid"
                         ? "bg-success"
                         : "bg-warning"
                     }`}
                   >
-                    {order.paymentMethod?.toUpperCase()} - {order.paymentStatus}
+                    {order.paymentMethod?.toUpperCase()} -{" "}
+                    {order.paymentStatus === "completed"
+                      ? "PAID"
+                      : order.paymentStatus?.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -785,12 +789,15 @@ const OrderTracking = () => {
                       <span>Payment Status</span>
                       <span
                         className={`badge ${
-                          order.paymentStatus === "completed"
+                          order.paymentStatus === "completed" ||
+                          order.paymentStatus === "paid"
                             ? "bg-success"
                             : "bg-warning"
                         }`}
                       >
-                        {order.paymentStatus}
+                        {order.paymentStatus === "completed"
+                          ? "Paid"
+                          : order.paymentStatus}
                       </span>
                     </div>
                   </div>

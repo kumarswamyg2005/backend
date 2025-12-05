@@ -57,6 +57,8 @@ const Dashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [showDeliverModal, setShowDeliverModal] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [deliveredOrderInfo, setDeliveredOrderInfo] = useState(null);
 
   // Delivery form state
   const [deliveryForm, setDeliveryForm] = useState({
@@ -153,7 +155,24 @@ const Dashboard = () => {
     if (result.error) {
       alert(result.payload?.message || "Invalid OTP. Please try again.");
     } else {
+      // Store order info for success animation
+      setDeliveredOrderInfo({
+        orderId: selectedOrder._id.toString().substring(0, 8).toUpperCase(),
+        customerName:
+          deliveryForm.receivedBy || selectedOrder.shippingAddress?.name,
+        amount: selectedOrder.totalAmount || selectedOrder.total,
+      });
       setShowDeliverModal(false);
+
+      // Show success animation
+      setShowSuccessAnimation(true);
+
+      // Auto-hide after 4 seconds
+      setTimeout(() => {
+        setShowSuccessAnimation(false);
+        setDeliveredOrderInfo(null);
+      }, 4000);
+
       dispatch(fetchDeliveryOrders());
       dispatch(fetchDeliveryStatistics());
     }
@@ -697,28 +716,6 @@ const Dashboard = () => {
                   />
                 </div>
 
-                {/* Relationship */}
-                <div className="mb-3">
-                  <label className="form-label fw-bold">Relationship</label>
-                  <select
-                    className="form-select"
-                    value={deliveryForm.relationship}
-                    onChange={(e) =>
-                      setDeliveryForm({
-                        ...deliveryForm,
-                        relationship: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="Self">Self</option>
-                    <option value="Family">Family Member</option>
-                    <option value="Colleague">Colleague</option>
-                    <option value="Security">Security Guard</option>
-                    <option value="Neighbor">Neighbor</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
                 {/* Delivery Notes */}
                 <div className="mb-3">
                   <label className="form-label fw-bold">
@@ -766,6 +763,72 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Success Animation Modal */}
+      {showSuccessAnimation && (
+        <div className="delivery-success-overlay">
+          <div className="delivery-success-modal">
+            <div className="success-animation">
+              <div className="checkmark-circle">
+                <svg className="checkmark-svg" viewBox="0 0 52 52">
+                  <circle
+                    className="checkmark-circle-bg"
+                    cx="26"
+                    cy="26"
+                    r="25"
+                    fill="none"
+                  />
+                  <path
+                    className="checkmark-check"
+                    fill="none"
+                    d="M14.1 27.2l7.1 7.2 16.7-16.8"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h2 className="success-title">Delivery Completed!</h2>
+            <p className="success-subtitle">Order delivered successfully</p>
+            {deliveredOrderInfo && (
+              <div className="success-details">
+                <div className="detail-row">
+                  <span className="detail-label">Order ID:</span>
+                  <span className="detail-value">
+                    #{deliveredOrderInfo.orderId}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Delivered To:</span>
+                  <span className="detail-value">
+                    {deliveredOrderInfo.customerName}
+                  </span>
+                </div>
+                {deliveredOrderInfo.amount && (
+                  <div className="detail-row">
+                    <span className="detail-label">Amount:</span>
+                    <span className="detail-value">
+                      {formatPrice(deliveredOrderInfo.amount)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="earnings-badge">
+              <i className="bi bi-coin me-2"></i>
+              +₹50 Earned!
+            </div>
+            <button
+              className="btn btn-success btn-lg mt-3"
+              onClick={() => {
+                setShowSuccessAnimation(false);
+                setDeliveredOrderInfo(null);
+              }}
+            >
+              <i className="bi bi-check2 me-2"></i>
+              Great!
+            </button>
           </div>
         </div>
       )}
