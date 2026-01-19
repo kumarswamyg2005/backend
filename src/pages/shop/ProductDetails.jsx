@@ -214,7 +214,7 @@ function ProductDetails() {
                 </>
               ) : (
                 <img
-                  src={`${API_BASE_URL}/images/placeholder.png`}
+                  src={`${API_BASE_URL}/images/placeholder.svg`}
                   alt="No image"
                   className="card-img-top"
                   style={{ height: "500px", objectFit: "cover" }}
@@ -242,7 +242,7 @@ function ProductDetails() {
                       }}
                       onClick={() => setCurrentImageIndex(index)}
                       onError={(e) => {
-                        e.target.src = `${API_BASE_URL}/images/placeholder.png`;
+                        e.target.src = `${API_BASE_URL}/images/placeholder.svg`;
                       }}
                     />
                   ))}
