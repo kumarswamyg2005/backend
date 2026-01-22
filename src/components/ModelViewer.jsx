@@ -42,7 +42,7 @@ const ModelViewer = ({
       60,
       container.clientWidth / container.clientHeight,
       0.1,
-      1000
+      1000,
     );
     camera.position.set(0, 0.5, 3);
     camera.lookAt(0, 0, 0);
@@ -51,7 +51,7 @@ const ModelViewer = ({
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.cursor = "grab";
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
@@ -102,7 +102,7 @@ const ModelViewer = ({
       camera.updateProjectionMatrix();
       renderer.setSize(
         containerRef.current.clientWidth,
-        containerRef.current.clientHeight
+        containerRef.current.clientHeight,
       );
     };
     window.addEventListener("resize", handleResize);
@@ -273,7 +273,7 @@ const ModelViewer = ({
         console.error("Failed to load 3D model:", err);
         setError(true);
         setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -323,7 +323,7 @@ const ModelViewer = ({
           undefined,
           (error) => {
             console.error("Failed to load graphic texture:", error);
-          }
+          },
         );
 
         model.materials.forEach((material) => {
@@ -351,7 +351,7 @@ const ModelViewer = ({
               undefined,
               (error) => {
                 console.error("Failed to load graphic texture:", error);
-              }
+              },
             );
 
             // Apply texture to material
