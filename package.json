@@ -26,6 +26,7 @@
     "bootstrap": "^5.3.8",
     "compression": "^1.8.1",
     "concurrently": "^8.2.2",
+    "connect-mongo": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csrf-csrf": "^4.0.3",

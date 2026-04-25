@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const path = require("path");
@@ -1342,6 +1343,7 @@ app.use(
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    exposedHeaders: ["X-Cache", "X-Cache-Key", "X-Cache-TTL"],
   }),
 );
 
@@ -1357,12 +1359,28 @@ app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 // Session configuration
 // isProd: true when running on Render (RENDER env var) or NODE_ENV=production
 const isProd = process.env.NODE_ENV === "production" || !!process.env.RENDER;
+
+// MongoDB-backed session store — sessions survive server restarts and spin-downs on Render
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/designden",
+  dbName: "designden",
+  collectionName: "sessions",
+  ttl: 24 * 60 * 60, // 24 hours (seconds)
+  autoRemove: "native", // Use MongoDB TTL index to auto-expire
+  touchAfter: 3 * 3600, // Lazy session update: only save if data changed OR 3h passed
+});
+
+sessionStore.on("error", (err) => {
+  console.error("[Session Store] MongoDB session store error:", err);
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "designden_secret_key_12345",
-    resave: true,
+    resave: false,
     saveUninitialized: false,
     proxy: true,
+    store: sessionStore,
     cookie: {
       secure: isProd,
       httpOnly: true,
@@ -2445,6 +2463,224 @@ app.get("/api/auth/session", (req, res) => {
 });
 
 app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: "Logout failed" });
+    }
+    res.json({ success: true, message: "Logged out successfully" });
+  });
+});
+
+// Legacy auth aliases kept for older frontend clients
+app.get("/api/check-session", (req, res) => {
+  if (req.session.user) {
+    res.json({ success: true, user: req.session.user });
+  } else {
+    res.json({ success: false, user: null });
+  }
+});
+
+app.post("/api/login", loginLimiter, async (req, res) => {
+  try {
+    const { email, password, twoFactorCode } = req.body;
+    const user = await User.findOne({
+      $or: [{ email: email }, { username: email }],
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    if (user.twoFactorEnabled) {
+      if (!twoFactorCode) {
+        const code = generateVerificationCode();
+        await verificationCodes.set(user.email, {
+          code,
+          expiresAt: Date.now() + 5 * 60 * 1000,
+          purpose: "2fa_login",
+        });
+
+        try {
+          await sendVerificationEmail(user.email, code, "2fa_login");
+        } catch (_) {}
+
+        return res.status(200).json({
+          success: false,
+          requires2FA: true,
+          message: "Verification code sent to your email",
+          devCode: code,
+        });
+      }
+
+      const storedData = await verificationCodes.get(user.email);
+      if (!storedData || storedData.purpose !== "2fa_login") {
+        return res.status(401).json({
+          success: false,
+          requires2FA: true,
+          message: "Verification code expired. Please try again.",
+        });
+      }
+
+      if (Date.now() > storedData.expiresAt) {
+        await verificationCodes.delete(user.email);
+        return res.status(401).json({
+          success: false,
+          requires2FA: true,
+          message: "Verification code expired. Please try again.",
+        });
+      }
+
+      if (storedData.code !== String(twoFactorCode).trim()) {
+        return res.status(401).json({
+          success: false,
+          requires2FA: true,
+          message: "Invalid verification code",
+        });
+      }
+
+      await verificationCodes.delete(user.email);
+    }
+
+    if (
+      (user.role === "designer" || user.role === "manager") &&
+      !user.approved
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: `Your ${user.role} account is pending approval. Please wait for admin approval.`,
+        pendingApproval: true,
+      });
+    }
+
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      contactNumber: user.contactNumber,
+      twoFactorEnabled: user.twoFactorEnabled,
+      approved: user.approved,
+    };
+
+    req.session.save((err) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Session error" });
+      }
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        user: req.session.user,
+      });
+    });
+  } catch (error) {
+    console.error("Legacy login alias error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.post("/api/signup", async (req, res) => {
+  try {
+    const {
+      username,
+      name,
+      email,
+      password,
+      contactNumber,
+      role,
+      address,
+      designerProfile: profileData,
+    } = req.body;
+
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const requiresApproval = role === "designer" || role === "manager";
+
+    const user = new User({
+      username,
+      name: name || username,
+      email,
+      password: hashedPassword,
+      contactNumber,
+      role: role || "customer",
+      approved: !requiresApproval,
+      addresses: address
+        ? [
+            {
+              street: address.street,
+              city: address.city,
+              state: address.state,
+              pincode: address.pincode,
+              isDefault: true,
+            },
+          ]
+        : [],
+    });
+
+    if (role === "designer") {
+      user.designerProfile = {
+        bio: profileData?.bio || "",
+        specializations: profileData?.specializations || [],
+        experience: profileData?.experience || 0,
+        portfolio: profileData?.portfolio || [],
+        rating: 0,
+        totalRatings: 0,
+        completedOrders: 0,
+        isAvailable: true,
+        priceRange: profileData?.priceRange || { min: 500, max: 5000 },
+        turnaroundDays: profileData?.turnaroundDays || 7,
+        badges: ["New Designer"],
+      };
+    }
+
+    await user.save();
+
+    req.session.user = {
+      id: user._id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      contactNumber: user.contactNumber,
+      approved: user.approved,
+    };
+
+    res.json({
+      success: true,
+      message: requiresApproval
+        ? "Account created successfully. Please wait for admin approval before you can access designer features."
+        : "Account created successfully",
+      user: req.session.user,
+      requiresApproval,
+    });
+  } catch (error) {
+    console.error("Legacy signup alias error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ success: false, message: "Logout failed" });
@@ -3585,7 +3821,11 @@ app.get("/api/shop/products", async (req, res) => {
 
     const cacheKey = `products:${JSON.stringify(req.query)}`;
     const cached = await cacheGet(cacheKey);
-    if (cached) return res.json(cached);
+    res.setHeader("X-Cache-Key", cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
 
     let query = {};
 
@@ -3631,7 +3871,13 @@ app.get("/api/shop/products", async (req, res) => {
 
     const products = await Product.find(query).sort(sortOption);
     const result = { success: true, products };
-    if (!search) await cacheSet(cacheKey, result, 120);
+    if (!search) {
+      await cacheSet(cacheKey, result, 120);
+      res.setHeader("X-Cache", "MISS");
+      res.setHeader("X-Cache-TTL", "120");
+    } else {
+      res.setHeader("X-Cache", "BYPASS");
+    }
     res.json(result);
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -3654,13 +3900,55 @@ app.get("/api/shop/products/:id", async (req, res) => {
   }
 });
 
+// Legacy product aliases for older frontend clients
+app.get("/api/products", async (req, res) => {
+  try {
+    const products = await Product.find({}).sort({ createdAt: -1 });
+    res.json({ success: true, products });
+  } catch (error) {
+    console.error("Error fetching legacy products:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.get("/api/products/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error("Error fetching legacy product by id:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.get("/api/categories", async (_req, res) => {
+  try {
+    const categories = await Product.distinct("category");
+    res.json({ success: true, categories: categories.filter(Boolean).sort() });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 app.get("/api/shop/featured", async (req, res) => {
   try {
     const cached = await cacheGet("products:featured");
-    if (cached) return res.json(cached);
+    res.setHeader("X-Cache-Key", "products:featured");
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
     const products = await Product.find({ featured: true }).limit(6);
     const result = { success: true, products };
     await cacheSet("products:featured", result, 300);
+    res.setHeader("X-Cache", "MISS");
+    res.setHeader("X-Cache-TTL", "300");
     res.json(result);
   } catch (error) {
     console.error("Error fetching featured products:", error);
@@ -4388,6 +4676,42 @@ app.put(
     }
   },
 );
+
+app.patch("/admin/api/products/:id/stock", async (req, res) => {
+  try {
+    if (!req.session.user || req.session.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const requestedStock = Number(req.body.stock);
+    const inStock =
+      typeof req.body.inStock === "boolean" ? req.body.inStock : requestedStock > 0;
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        inStock,
+        stockQuantity: Number.isFinite(requestedStock) ? requestedStock : 0,
+      },
+      { new: true },
+    );
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Product stock updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Error updating legacy admin stock:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 // Admin - Dashboard
 app.get("/admin/dashboard", async (req, res) => {
@@ -5391,7 +5715,11 @@ app.get("/api/marketplace/designers", async (req, res) => {
 
     const cacheKey = `marketplace:designers:${JSON.stringify({ page, limit, specialization, minRating, maxPrice, available, sortBy, search })}`;
     const cached = await cacheGet(cacheKey);
-    if (cached) return res.json(cached);
+    res.setHeader("X-Cache-Key", cacheKey);
+    if (cached) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(cached);
+    }
 
     const total = await User.countDocuments(filter);
 
@@ -5443,7 +5771,13 @@ app.get("/api/marketplace/designers", async (req, res) => {
         totalDesigners: total,
       },
     };
-    if (!search) await cacheSet(cacheKey, result, 60);
+    if (!search) {
+      await cacheSet(cacheKey, result, 60);
+      res.setHeader("X-Cache", "MISS");
+      res.setHeader("X-Cache-TTL", "60");
+    } else {
+      res.setHeader("X-Cache", "BYPASS");
+    }
     res.json(result);
   } catch (error) {
     console.error("Error fetching marketplace designers:", error);
@@ -7912,6 +8246,229 @@ app.delete("/api/customer/cart/:itemId", async (req, res) => {
     res.json({ success: true, message: "Item removed from cart", cart });
   } catch (error) {
     console.error("Error removing from cart:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Legacy cart aliases for older frontend clients
+app.get("/customer/api/cart", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    let cart = await Cart.findOne({ userId: req.session.user.id })
+      .populate("items.productId")
+      .populate({
+        path: "items.designId",
+        populate: {
+          path: "designerId",
+          select: "username email",
+        },
+      });
+
+    if (!cart) {
+      cart = new Cart({ userId: req.session.user.id, items: [] });
+      await cart.save();
+    }
+
+    const items = Array.isArray(cart.items) ? cart.items : [];
+    const itemCount = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const total = items.reduce((sum, item) => {
+      const productPrice = item.productId?.price;
+      const designPrice = item.designId?.estimatedPrice;
+      const unitPrice =
+        typeof productPrice === "number"
+          ? productPrice
+          : typeof designPrice === "number"
+            ? designPrice
+            : 0;
+      return sum + unitPrice * (item.quantity || 0);
+    }, 0);
+
+    res.json({ success: true, items, itemCount, total, cart });
+  } catch (error) {
+    console.error("Error fetching legacy cart:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.post("/customer/api/cart/add", requireRole("customer"), async (req, res) => {
+  try {
+    const {
+      productId,
+      designId,
+      quantity,
+      size,
+      color,
+      customDesign,
+    } = req.body;
+    const resolvedDesignId =
+      designId ||
+      customDesign?.designId ||
+      (typeof customDesign === "string" ? customDesign : undefined);
+
+    if (!productId && !resolvedDesignId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID or Design ID is required",
+      });
+    }
+
+    if (productId) {
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Product not found" });
+      }
+
+      if (!product.inStock || product.stockQuantity < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "Insufficient stock available",
+        });
+      }
+    }
+
+    if (resolvedDesignId) {
+      const design = await Design.findById(resolvedDesignId);
+      if (!design) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Design not found" });
+      }
+    }
+
+    let cart = await Cart.findOne({ userId: req.session.user.id });
+    if (!cart) {
+      cart = new Cart({ userId: req.session.user.id, items: [] });
+    }
+
+    const existingItem = cart.items.find((item) => {
+      if (productId && item.productId) {
+        return (
+          item.productId.toString() === productId &&
+          item.size === size &&
+          item.color === color
+        );
+      }
+      if (resolvedDesignId && item.designId) {
+        return item.designId.toString() === resolvedDesignId;
+      }
+      return false;
+    });
+
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      cart.items.push({
+        productId,
+        designId: resolvedDesignId,
+        quantity,
+        size,
+        color,
+      });
+    }
+
+    cart.updatedAt = new Date();
+    await cart.save();
+    res.json({ success: true, message: "Item added to cart", cart });
+  } catch (error) {
+    console.error("Error adding legacy cart item:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.put("/customer/api/cart/update/:itemId", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    const { itemId } = req.params;
+    const { quantity } = req.body;
+
+    if (quantity < 1) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid quantity" });
+    }
+
+    const cart = await Cart.findOne({ userId: req.session.user.id });
+    if (!cart) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cart not found" });
+    }
+
+    const item = cart.items.id(itemId);
+    if (!item) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Item not found in cart" });
+    }
+
+    item.quantity = quantity;
+    cart.updatedAt = new Date();
+    await cart.save();
+
+    res.json({ success: true, message: "Cart updated", cart });
+  } catch (error) {
+    console.error("Error updating legacy cart:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.delete("/customer/api/cart/remove/:itemId", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    const cart = await Cart.findOne({ userId: req.session.user.id });
+    if (!cart) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Cart not found" });
+    }
+
+    const item = cart.items.id(req.params.itemId);
+    if (!item) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Item not found in cart" });
+    }
+
+    item.deleteOne();
+    cart.updatedAt = new Date();
+    await cart.save();
+
+    res.json({ success: true, message: "Item removed from cart", cart });
+  } catch (error) {
+    console.error("Error removing legacy cart item:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.delete("/customer/api/cart/clear", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    const cart = await Cart.findOne({ userId: req.session.user.id });
+    if (!cart) {
+      return res.json({ success: true, message: "Cart cleared", cart: null });
+    }
+
+    cart.items = [];
+    cart.updatedAt = new Date();
+    await cart.save();
+
+    res.json({ success: true, message: "Cart cleared", cart });
+  } catch (error) {
+    console.error("Error clearing legacy cart:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
